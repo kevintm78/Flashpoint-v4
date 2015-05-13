@@ -41,6 +41,8 @@
 
 static int active_count;
 
+static bool bk_locked = false;
+
 struct cpufreq_interactive_cpuinfo {
 	struct timer_list cpu_timer;
 	struct timer_list cpu_slack_timer;
@@ -1040,6 +1042,10 @@ static ssize_t store_target_loads(
 #ifdef CONFIG_MODE_AUTO_CHANGE
 	unsigned long flags2;
 #endif
+
+	if (bk_locked)
+		return count;
+
 	new_target_loads = get_tokenized_data(buf, &ntokens);
 	if (IS_ERR(new_target_loads))
 		return PTR_RET(new_target_loads);
@@ -1161,6 +1167,10 @@ static ssize_t store_hispeed_freq(struct kobject *kobj,
 #ifdef CONFIG_MODE_AUTO_CHANGE
 	unsigned long flags2;
 #endif
+
+	if (bk_locked)
+		return count;
+
 	ret = strict_strtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
@@ -1199,6 +1209,10 @@ static ssize_t store_sampling_down_factor(struct kobject *kobj,
 #ifdef CONFIG_MODE_AUTO_CHANGE
 	unsigned long flags2;
 #endif
+
+	if (bk_locked)
+		return count;
+
 	ret = strict_strtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
@@ -1236,6 +1250,10 @@ static ssize_t store_go_hispeed_load(struct kobject *kobj,
 #ifdef CONFIG_MODE_AUTO_CHANGE
 	unsigned long flags2;
 #endif
+
+	if (bk_locked)
+		return count;
+
 	ret = strict_strtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
@@ -1272,6 +1290,10 @@ static ssize_t store_min_sample_time(struct kobject *kobj,
 #ifdef CONFIG_MODE_AUTO_CHANGE
 	unsigned long flags2;
 #endif
+
+	if (bk_locked)
+		return count;
+
 	ret = strict_strtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
@@ -1308,6 +1330,10 @@ static ssize_t store_timer_rate(struct kobject *kobj,
 #ifdef CONFIG_MODE_AUTO_CHANGE
 	unsigned long flags2;
 #endif
+
+	if (bk_locked)
+		return count;
+
 	ret = strict_strtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
@@ -1339,6 +1365,9 @@ static ssize_t store_timer_slack(
 	int ret;
 	unsigned long val;
 
+	if (bk_locked)
+		return count;
+
 	ret = kstrtol(buf, 10, &val);
 	if (ret < 0)
 		return ret;
@@ -1346,6 +1375,38 @@ static ssize_t store_timer_slack(
 	timer_slack_val = val;
 	return count;
 }
+
+static ssize_t show_bk_locked(struct kobject *kobj,
+			struct attribute *attr, char *buf)
+{
+	if (bk_locked)
+		return snprintf(buf, PAGE_SIZE, "1\n");
+	
+	return snprintf(buf, PAGE_SIZE, "0\n");
+}
+
+static ssize_t store_bk_locked(
+	struct kobject *kobj, struct attribute *attr, const char *buf,
+	size_t count)
+{
+	int ret;
+	unsigned long val;
+
+	ret = kstrtol(buf, 10, &val);
+	if (ret < 0)
+		return ret;
+
+	if (val == 1)
+		bk_locked = true;
+	else
+		bk_locked = false;
+	
+	return count;
+}
+
+static struct global_attr bk_locked_attr = __ATTR(bk_locked, 0644,
+		show_bk_locked, store_bk_locked);
+
 
 define_one_global_rw(timer_slack);
 
@@ -1361,6 +1422,9 @@ static ssize_t store_boost(struct kobject *kobj, struct attribute *attr,
 	int ret;
 	unsigned long val;
 
+	if (bk_locked)
+		return count;
+		
 	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
@@ -1385,6 +1449,9 @@ static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 {
 	int ret;
 	unsigned long val;
+
+	if (bk_locked)
+		return count;
 
 	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
@@ -1412,6 +1479,9 @@ static ssize_t store_boostpulse_duration(
 	int ret;
 	unsigned long val;
 
+	if (bk_locked)
+		return count;
+
 	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
@@ -1433,6 +1503,9 @@ static ssize_t store_io_is_busy(struct kobject *kobj,
 {
 	int ret;
 	unsigned long val;
+
+	if (bk_locked)
+		return count;
 
 	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
@@ -1483,6 +1556,9 @@ static ssize_t store_sync_freq(struct kobject *kobj,
 	int ret;
 	unsigned long val;
 
+	if (bk_locked)
+		return count;
+
 	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
@@ -1504,6 +1580,9 @@ static ssize_t store_up_threshold_any_cpu_load(struct kobject *kobj,
 {
 	int ret;
 	unsigned long val;
+
+	if (bk_locked)
+		return count;
 
 	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
@@ -1528,6 +1607,9 @@ static ssize_t store_up_threshold_any_cpu_freq(struct kobject *kobj,
 {
 	int ret;
 	unsigned long val;
+
+	if (bk_locked)
+		return count;
 
 	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
@@ -1633,6 +1715,7 @@ time(single_exit_time, single_exit_time_attr);
 
 #endif
 static struct attribute *interactive_attributes[] = {
+	&bk_locked_attr.attr,
 	&target_loads_attr.attr,
 	&above_hispeed_delay_attr.attr,
 	&hispeed_freq_attr.attr,
