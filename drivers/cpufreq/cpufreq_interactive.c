@@ -512,8 +512,6 @@ static void cpufreq_interactive_timer(unsigned long data)
 			if (new_freq < tunables->hispeed_freq)
 				new_freq = tunables->hispeed_freq;
 		}
-	} else if (cpu_load <= DOWN_LOW_LOAD_THRESHOLD) {
-		new_freq = pcpu->policy->cpuinfo.min_freq;
 	} else {
 		new_freq = choose_freq(pcpu, loadadjfreq);
 		if (new_freq > tunables->hispeed_freq &&
@@ -858,9 +856,6 @@ static ssize_t store_target_loads(
 	unsigned long flags2;
 #endif
 
-	if (bk_locked)
-		return count;
-
 	new_target_loads = get_tokenized_data(buf, &ntokens);
 	if (IS_ERR(new_target_loads))
 		return PTR_RET(new_target_loads);
@@ -933,9 +928,6 @@ static ssize_t store_hispeed_freq(struct cpufreq_interactive_tunables *tunables,
 	unsigned long flags2;
 #endif
 
-	if (bk_locked)
-		return count;
-
 	ret = strict_strtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
@@ -959,9 +951,6 @@ static ssize_t store_go_hispeed_load(struct cpufreq_interactive_tunables
 	unsigned long flags2;
 #endif
 
-	if (bk_locked)
-		return count;
-
 	ret = strict_strtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
@@ -983,9 +972,6 @@ static ssize_t store_min_sample_time(struct cpufreq_interactive_tunables
 #ifdef CONFIG_MODE_AUTO_CHANGE
 	unsigned long flags2;
 #endif
-
-	if (bk_locked)
-		return count;
 
 	ret = strict_strtoul(buf, 0, &val);
 	if (ret < 0)
@@ -1031,9 +1017,6 @@ static ssize_t store_timer_slack(struct cpufreq_interactive_tunables *tunables,
 	int ret;
 	unsigned long val;
 
-	if (bk_locked)
-		return count;
-
 	ret = kstrtol(buf, 10, &val);
 	if (ret < 0)
 		return ret;
@@ -1053,9 +1036,6 @@ static ssize_t store_boost(struct cpufreq_interactive_tunables *tunables,
 {
 	int ret;
 	unsigned long val;
-
-	if (bk_locked)
-		return count;
 
 	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
@@ -1081,9 +1061,6 @@ static ssize_t store_boostpulse(struct cpufreq_interactive_tunables *tunables,
 	int ret;
 	unsigned long val;
 
-	if (bk_locked)
-		return count;
-
 	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
@@ -1108,9 +1085,6 @@ static ssize_t store_boostpulse_duration(struct cpufreq_interactive_tunables
 	int ret;
 	unsigned long val;
 
-	if (bk_locked)
-		return count;
-
 	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
 		return ret;
@@ -1130,9 +1104,6 @@ static ssize_t store_io_is_busy(struct cpufreq_interactive_tunables *tunables,
 {
 	int ret;
 	unsigned long val;
-
-	if (bk_locked)
-		return count;
 
 	ret = kstrtoul(buf, 0, &val);
 	if (ret < 0)
